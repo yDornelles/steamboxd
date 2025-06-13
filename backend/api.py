@@ -38,10 +38,9 @@ class IGDBClient:
 
         query = f'''
         search "{nome_jogo}";
-        fields name,genres.name,first_release_date,platforms.name,summary;
+        fields name,genres.name,first_release_date,platforms.name,summary,cover.image_id;
         limit {limite};
         '''
-
         response = requests.post(self.API_URL, headers=headers, data=query)
         response.raise_for_status()
         return response.json()

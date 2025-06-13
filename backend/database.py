@@ -25,6 +25,7 @@ def criar_banco():
             nota INTEGER,
             status TEXT,
             comentario TEXT,
+            capa_id TEXT,
             usuario_id INTEGER,
             FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
         )
