@@ -6,10 +6,10 @@ def criar_banco():
 
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS usuarios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            senha TEXT NOT NULL
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nome TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        senha_hash TEXT NOT NULL
         )
     ''')
 
@@ -27,6 +27,7 @@ def criar_banco():
             comentario TEXT,
             capa_id TEXT,
             usuario_id INTEGER,
+            favorito INTEGER DEFAULT 0,
             FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
         )
     ''')
