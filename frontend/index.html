@@ -4,6 +4,16 @@
   <meta charset="UTF-8" />
   <title>Steamboxd</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .estrela {
+      font-size: 1.2rem;
+      color: gray;
+      cursor: pointer;
+    }
+    .estrela.selecionada {
+      color: gold;
+    }
+  </style>
 </head>
 <body class="p-4">
   <div class="container">
@@ -15,8 +25,18 @@
     <h2 class="mb-4">Adicionar Jogo</h2>
     <form id="form-jogo" class="mb-5">
       <input type="text" id="nome" placeholder="Nome do Jogo" class="form-control mb-2" required />
-      <input type="number" step="0.1" id="nota" placeholder="Nota" class="form-control mb-2" />
-      <input type="text" id="status" placeholder="Status" class="form-control mb-2" />
+      <div class="mb-2">
+        <label>Nota:</label><br>
+        <span id="estrelas-adicionar"></span>
+      </div>
+      <select id="status" class="form-select mb-2">
+        <option value="">Selecione o status</option>
+        <option value="quero jogar">Quero jogar</option>
+        <option value="jogando">Jogando</option>
+        <option value="jogado">Jogado</option>
+        <option value="abandonado">Abandonado</option>
+        <option value="zerado">Zerado</option>
+      </select>
       <textarea id="comentario" placeholder="Comentário" class="form-control mb-2"></textarea>
       <button type="submit" class="btn btn-primary">Enviar</button>
     </form>
@@ -24,26 +44,27 @@
     <div class="mb-4">
       <h4>Filtros</h4>
       <input type="text" id="filtro-nome" placeholder="Buscar por nome" class="form-control w-auto d-inline-block me-2 mb-2" />
-
       <select id="filtro-status" class="form-select w-auto d-inline-block me-2">
         <option value="">Todos os status</option>
         <option value="quero jogar">Quero jogar</option>
         <option value="jogando">Jogando</option>
         <option value="jogado">Jogado</option>
+        <option value="abandonado">Abandonado</option>
+        <option value="zerado">Zerado</option>
       </select>
-
       <select id="filtro-nota" class="form-select w-auto d-inline-block me-2">
-        <option value="">Todas as notas</option>
-        <option value="9">Nota ≥ 9</option>
-        <option value="8">Nota ≥ 8</option>
-        <option value="7">Nota ≥ 7</option>
+        <option value="">Todas as estrelas</option>
+        <option value="5">5 estrelas</option>
+        <option value="4">4 estrelas</option>
+        <option value="3">3 estrelas</option>
+        <option value="2">2 estrelas</option>
+        <option value="1">1 estrelas</option>
+        <option value="0">0 estrelas</option>
       </select>
-
       <div class="form-check form-check-inline mb-2">
-      <input class="form-check-input" type="checkbox" id="filtro-favorito" />
-      <label class="form-check-label" for="filtro-favorito">Somente favoritos</label>
-
-</div>
+        <input class="form-check-input" type="checkbox" id="filtro-favorito" />
+        <label class="form-check-label" for="filtro-favorito">Somente favoritos</label>
+      </div>
       <button class="btn btn-secondary btn-sm" onclick="limparFiltros()">Limpar Filtros</button>
     </div>
 
@@ -60,8 +81,15 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <input type="number" id="modal-nota" class="form-control mb-2" placeholder="Nova Nota" />
-          <input type="text" id="modal-status" class="form-control mb-2" placeholder="Novo Status" />
+          <label>Nota:</label><br>
+          <span id="estrelas-editar"></span>
+          <select id="modal-status" class="form-select mb-2">
+            <option value="quero jogar">Quero jogar</option>
+            <option value="jogando">Jogando</option>
+            <option value="jogado">Jogado</option>
+            <option value="abandonado">Abandonado</option>
+            <option value="zerado">Zerado</option>
+          </select>
           <textarea id="modal-comentario" class="form-control" placeholder="Novo Comentário"></textarea>
         </div>
         <div class="modal-footer">
@@ -79,17 +107,20 @@
     const filtroStatus = document.getElementById("filtro-status");
     const filtroNota = document.getElementById("filtro-nota");
     const filtroNome = document.getElementById("filtro-nome");
+    const filtroFavorito = document.getElementById("filtro-favorito");
+    const estrelasAdicionar = document.getElementById("estrelas-adicionar");
+    const estrelasEditar = document.getElementById("estrelas-editar");
+
     let todosOsJogos = [];
     let jogoAtualParaEditar = "";
+    let notaAdicionar = 0;
+    let notaEditar = 0;
 
     async function verificarLogin() {
       const res = await fetch("http://localhost:5000/usuario-logado", { credentials: "include" });
       const dados = await res.json();
-      if (!dados.logado) {
-        window.location.href = "login.html";
-      } else {
-        atualizarLista();
-      }
+      if (!dados.logado) window.location.href = "login.html";
+      else atualizarLista();
     }
 
     async function logout() {
@@ -101,7 +132,7 @@
       e.preventDefault();
       const dados = {
         nome: document.getElementById("nome").value,
-        nota: parseFloat(document.getElementById("nota").value),
+        nota: notaAdicionar,
         status: document.getElementById("status").value,
         comentario: document.getElementById("comentario").value
       };
@@ -116,17 +147,22 @@
       const resp = await res.json();
       alert(resp.mensagem || resp.erro);
       atualizarLista();
+
+      form.reset();
+      notaAdicionar = 0;
+      renderEstrelasInterativas(notaAdicionar, estrelasAdicionar, false);
     });
 
     filtroStatus.addEventListener("change", exibirFiltrados);
     filtroNota.addEventListener("change", exibirFiltrados);
     filtroNome.addEventListener("input", exibirFiltrados);
-    document.getElementById("filtro-favorito").addEventListener("change", exibirFiltrados);
+    filtroFavorito.addEventListener("change", exibirFiltrados);
 
     function limparFiltros() {
       filtroStatus.value = "";
       filtroNota.value = "";
       filtroNome.value = "";
+      filtroFavorito.checked = false;
       exibirFiltrados();
     }
 
@@ -141,19 +177,16 @@
       const statusSelecionado = filtroStatus.value;
       const notaSelecionada = parseFloat(filtroNota.value);
       const nomeBusca = filtroNome.value.toLowerCase();
-
-      const somenteFavoritos = document.getElementById("filtro-favorito").checked;
+      const favoritosAtivo = filtroFavorito.checked;
 
       const jogosFiltrados = todosOsJogos.filter(jogo => {
         const statusOk =
           !statusSelecionado ||
           (statusSelecionado === "favorito" && jogo.favorito) ||
           jogo.status === statusSelecionado;
-
-        const notaOk = isNaN(notaSelecionada) || (jogo.nota >= notaSelecionada);
+        const notaOk = isNaN(notaSelecionada) || jogo.nota === notaSelecionada;
         const nomeOk = !nomeBusca || jogo.nome.toLowerCase().includes(nomeBusca);
-        const favoritoOk = !somenteFavoritos || jogo.favorito;
-
+        const favoritoOk = !favoritosAtivo || jogo.favorito;
         return statusOk && notaOk && nomeOk && favoritoOk;
       });
 
@@ -163,6 +196,7 @@
           ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${jogo.capa_id}.jpg`
           : null;
 
+        const estrelas = renderizarEstrelas(jogo.nota);
         const favoritoIcone = jogo.favorito ? "⭐" : "☆";
 
         const li = document.createElement("li");
@@ -171,20 +205,27 @@
           ${capaUrl ? `<img src="${capaUrl}" alt="Capa de ${jogo.nome}" style="height:150px;"><br>` : ""}
           <strong>${jogo.nome}</strong>
           <button class="btn btn-sm btn-outline-warning ms-2" onclick="toggleFavorito('${jogo.nome}', ${jogo.favorito})">${favoritoIcone}</button><br>
-          Nota: ${jogo.nota} — ${jogo.status}<br>
+          Nota: ${estrelas} — ${jogo.status}<br>
           Comentário: ${jogo.comentario}<br>
           <em>${jogo.generos || "Sem gênero"} | ${jogo.plataformas || "Sem plataforma"}</em><br>
           ${jogo.data_lancamento ? `Lançamento: ${new Date(jogo.data_lancamento * 1000).toLocaleDateString()}` : ""}
           <p>${jogo.resumo || "Sem resumo disponível."}</p>
-          <button class="btn btn-sm btn-warning me-2" onclick="abrirModalEditar('${jogo.nome}', ${jogo.nota}, '${jogo.status}', '${jogo.comentario.replace(/'/g, "&#39;")}')"
-            data-bs-toggle="modal" data-bs-target="#modalEditar">
-            ✏️ Editar
-          </button>
+          <button class="btn btn-sm btn-warning me-2" onclick="abrirModalEditar('${jogo.nome}', ${jogo.nota}, '${jogo.status}', '${jogo.comentario.replace(/'/g, "&#39;")}')" data-bs-toggle="modal" data-bs-target="#modalEditar">✏️ Editar</button>
           <button class="btn btn-sm btn-danger" onclick="removerJogo('${jogo.nome}')">🗑 Remover</button>
           <hr>
         `;
         lista.appendChild(li);
       });
+    }
+
+    function renderizarEstrelas(nota) {
+      let html = "";
+      for (let i = 1; i <= 5; i++) {
+        if (nota >= i) html += "★";
+        else if (nota >= i - 0.5) html += "☆";
+        else html += "☆";
+      }
+      return html;
     }
 
     async function toggleFavorito(nome, atual) {
@@ -195,32 +236,39 @@
         credentials: "include",
         body: JSON.stringify({ favorito: novoValor })
       });
-
       const resp = await res.json();
       alert(resp.mensagem || resp.erro);
       atualizarLista();
     }
 
+    async function removerJogo(nome) {
+      if (!confirm("Tem certeza que deseja remover este jogo?")) return;
+      const res = await fetch(`http://localhost:5000/jogos/${nome}`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+      const resp = await res.json();
+      alert(resp.mensagem || resp.erro);
+      atualizarLista();
+    }
 
     function abrirModalEditar(nome, nota, status, comentario) {
       jogoAtualParaEditar = nome;
-      document.getElementById("modal-nota").value = nota;
+      notaEditar = nota;
+      renderEstrelas(notaEditar, estrelasEditar, true);
       document.getElementById("modal-status").value = status;
       document.getElementById("modal-comentario").value = comentario;
     }
 
     async function confirmarEdicao() {
-      const nota = parseFloat(document.getElementById("modal-nota").value);
       const status = document.getElementById("modal-status").value;
       const comentario = document.getElementById("modal-comentario").value;
-
       const res = await fetch(`http://localhost:5000/jogos/${encodeURIComponent(jogoAtualParaEditar)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ nota, status, comentario })
+        body: JSON.stringify({ nota: notaEditar, status, comentario })
       });
-
       const resp = await res.json();
       alert(resp.mensagem || resp.erro);
       const modal = bootstrap.Modal.getInstance(document.getElementById("modalEditar"));
@@ -228,6 +276,27 @@
       atualizarLista();
     }
 
+    function renderEstrelas(valor, container, isEditar = false) {
+      container.innerHTML = "";
+      for (let i = 1; i <= 5; i++) {
+        const span = document.createElement("span");
+        span.classList.add("estrela");
+        if (i <= valor) span.classList.add("selecionada");
+        span.textContent = "★";
+        span.onclick = () => {
+          if (isEditar) {
+            notaEditar = i;
+            renderEstrelas(notaEditar, container, true);
+          } else {
+            notaAdicionar = i;
+            renderEstrelas(notaAdicionar, container, false);
+          }
+        };
+        container.appendChild(span);
+      }
+    }
+
+    renderEstrelas(notaAdicionar, estrelasAdicionar, false);
     verificarLogin();
   </script>
 </body>
