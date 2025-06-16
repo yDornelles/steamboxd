@@ -54,12 +54,11 @@
       </select>
       <select id="filtro-nota" class="form-select w-auto d-inline-block me-2">
         <option value="">Todas as estrelas</option>
-        <option value="5">5 estrelas</option>
-        <option value="4">4 estrelas</option>
-        <option value="3">3 estrelas</option>
-        <option value="2">2 estrelas</option>
-        <option value="1">1 estrelas</option>
-        <option value="0">0 estrelas</option>
+        <option value="5">★★★★★</option>
+        <option value="4">★★★★☆</option>
+        <option value="3">★★★☆☆</option>
+        <option value="2">★★☆☆☆</option>
+        <option value="1">★☆☆☆☆</option>
       </select>
       <div class="form-check form-check-inline mb-2">
         <input class="form-check-input" type="checkbox" id="filtro-favorito" />
@@ -81,8 +80,12 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <label>Nota:</label><br>
-          <span id="estrelas-editar"></span>
+          <div class="mb-2">
+            <label>Nota:</label><br>
+            <span id="estrelas-editar"></span>
+          </div>
+          <input type="hidden" id="modal-nota" />
+          <label>Status:</label><br>
           <select id="modal-status" class="form-select mb-2">
             <option value="quero jogar">Quero jogar</option>
             <option value="jogando">Jogando</option>
@@ -90,6 +93,7 @@
             <option value="abandonado">Abandonado</option>
             <option value="zerado">Zerado</option>
           </select>
+          <label>Comentário:</label><br>
           <textarea id="modal-comentario" class="form-control" placeholder="Novo Comentário"></textarea>
         </div>
         <div class="modal-footer">
@@ -218,6 +222,26 @@
       });
     }
 
+    function renderEstrelasEditar(notaInicial) {
+      const container = document.getElementById("estrelas-editar");
+      container.innerHTML = "";
+      document.getElementById("modal-nota").value = notaInicial;
+
+      for (let i = 1; i <= 5; i++) {
+        const estrela = document.createElement("span");
+        estrela.textContent = i <= notaInicial ? "★" : "☆";
+        estrela.className = "estrela fs-4 text-warning";
+        estrela.style.cursor = "pointer";
+
+        estrela.addEventListener("click", () => {
+          document.getElementById("modal-nota").value = i;
+          renderEstrelasEditar(i);
+        });
+
+        container.appendChild(estrela);
+      }
+    }
+
     function renderizarEstrelas(nota) {
       let html = "";
       for (let i = 1; i <= 5; i++) {
@@ -254,21 +278,23 @@
 
     function abrirModalEditar(nome, nota, status, comentario) {
       jogoAtualParaEditar = nome;
-      notaEditar = nota;
-      renderEstrelas(notaEditar, estrelasEditar, true);
       document.getElementById("modal-status").value = status;
       document.getElementById("modal-comentario").value = comentario;
+      renderEstrelasEditar(nota);
     }
 
     async function confirmarEdicao() {
+      const nota = parseFloat(document.getElementById("modal-nota").value);
       const status = document.getElementById("modal-status").value;
       const comentario = document.getElementById("modal-comentario").value;
+
       const res = await fetch(`http://localhost:5000/jogos/${encodeURIComponent(jogoAtualParaEditar)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ nota: notaEditar, status, comentario })
+        body: JSON.stringify({ nota, status, comentario })
       });
+
       const resp = await res.json();
       alert(resp.mensagem || resp.erro);
       const modal = bootstrap.Modal.getInstance(document.getElementById("modalEditar"));
