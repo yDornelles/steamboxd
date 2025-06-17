@@ -9,7 +9,7 @@ class IGDBClient:
         self.client_id = client_id
         self.client_secret = client_secret
         self.access_token = None
-        self.token_expiry = 0  # timestamp da expiração
+        self.token_expiry = 0 
 
         self.autenticar()
 
@@ -23,7 +23,7 @@ class IGDBClient:
         response.raise_for_status()
         data = response.json()
         self.access_token = data["access_token"]
-        self.token_expiry = time.time() + data["expires_in"] - 60  # renovar 1 min antes
+        self.token_expiry = time.time() + data["expires_in"] - 60 
 
     def _headers(self):
         if not self.access_token or time.time() >= self.token_expiry:
