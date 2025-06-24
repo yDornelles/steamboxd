@@ -13,13 +13,63 @@
     .estrela.selecionada {
       color: gold;
     }
+    body {
+      background-color: #212337;
+    }
+    * {
+      color: #8c52ff;
+    }
+    .form-control, .form-select, .form-control:focus, ::placeholder, .form-check-input {
+      background-color: #2c2f47 !important;
+      color: #8c52ff !important;
+      border-color: #8c52ff !important;
+    }
+    input:-webkit-autofill {
+      background-color: #2c2f47 !important;
+      -webkit-box-shadow: 0 0 0px 1000px #2c2f47 inset !important;
+      -webkit-text-fill-color: #8c52ff !important;
+      border-color: #8c52ff !important;
+      transition: background-color 5000s ease-in-out 0s;
+    }
+    #enviar, #salvared, #limpa, #cancelared:hover {
+      background-color: #8c52ff;
+      border-color: #8c52ff;
+      color: #212337;
+    }
+    #enviar:hover, #limpa:hover, #salvared:hover {
+      background-color: #7249c4;
+      border-color: #7249c4;
+      color: black;
+    }
+    #cancelared {
+      background-color: #212337;
+      color: #8c52ff;
+      border-color: #8c52ff;      
+    }
+    #sair:hover {
+      color:#2c2f47;
+    }
+    .adic {
+      font-size: 14px;
+    }
+    .mb-4jogo {
+      display: flex;
+    }
+    .prin {
+      min-width: 400px;
+    }
+    .modal-header, .modal-body, .modal-footer {
+      background-color: #212337;
+      color: #8c52ff;
+      border-color:#12131d;
+    }
   </style>
 </head>
 <body class="p-4">
   <div class="container">
     <div class="mb-4 d-flex justify-content-between align-items-center">
       <h1 class="mb-0">Steamboxd</h1>
-      <button class="btn btn-outline-danger btn-sm" onclick="logout()">Sair</button>
+      <button id="sair" class="btn btn-outline-danger btn-sm" onclick="logout()">Sair</button>
     </div>
 
     <h2 class="mb-4">Adicionar Jogo</h2>
@@ -38,7 +88,7 @@
         <option value="zerado">Zerado</option>
       </select>
       <textarea id="comentario" placeholder="Comentário" class="form-control mb-2"></textarea>
-      <button type="submit" class="btn btn-primary">Enviar</button>
+      <button id="enviar" type="submit" class="btn btn-primary">Enviar</button>
     </form>
 
     <div class="mb-4">
@@ -64,7 +114,7 @@
         <input class="form-check-input" type="checkbox" id="filtro-favorito" />
         <label class="form-check-label" for="filtro-favorito">Somente favoritos</label>
       </div>
-      <button class="btn btn-secondary btn-sm" onclick="limparFiltros()">Limpar Filtros</button>
+      <button id="limpa" class="btn btn-secondary btn-sm" onclick="limparFiltros()">Limpar Filtros</button>
     </div>
 
     <h2>Jogos Salvos</h2>
@@ -97,8 +147,8 @@
           <textarea id="modal-comentario" class="form-control" placeholder="Novo Comentário"></textarea>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="button" class="btn btn-primary" onclick="confirmarEdicao()">Salvar</button>
+          <button id="cancelared" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button id="salvared" type="button" class="btn btn-primary" onclick="confirmarEdicao()">Salvar</button>
         </div>
       </div>
     </div>
@@ -206,14 +256,20 @@
         const li = document.createElement("li");
         li.className = "mb-4";
         li.innerHTML = `
+          <div class="mb-4jogo">
+          <div class="prin">
           ${capaUrl ? `<img src="${capaUrl}" alt="Capa de ${jogo.nome}" style="height:150px;"><br>` : ""}
           <strong>${jogo.nome}</strong>
           <button class="btn btn-sm btn-outline-warning ms-2" onclick="toggleFavorito('${jogo.nome}', ${jogo.favorito})">${favoritoIcone}</button><br>
           Nota: ${estrelas} — ${jogo.status}<br>
-          Comentário: ${jogo.comentario}<br>
-          <em>${jogo.generos || "Sem gênero"} | ${jogo.plataformas || "Sem plataforma"}</em><br>
+          Comentário: ${jogo.comentario}<br><br>
+          </div>
+          <div class="adic">
+          <em class="adic">${jogo.generos || "Sem gênero"} | ${jogo.plataformas || "Sem plataforma"}</em><br>
           ${jogo.data_lancamento ? `Lançamento: ${new Date(jogo.data_lancamento * 1000).toLocaleDateString()}` : ""}
-          <p>${jogo.resumo || "Sem resumo disponível."}</p>
+          <p class="adic">${jogo.resumo || "Sem resumo disponível."}</p>
+          </div>
+          </div>
           <button class="btn btn-sm btn-warning me-2" onclick="abrirModalEditar('${jogo.nome}', ${jogo.nota}, '${jogo.status}', '${jogo.comentario.replace(/'/g, "&#39;")}')" data-bs-toggle="modal" data-bs-target="#modalEditar">✏️ Editar</button>
           <button class="btn btn-sm btn-danger" onclick="removerJogo('${jogo.nome}')">🗑 Remover</button>
           <hr>
